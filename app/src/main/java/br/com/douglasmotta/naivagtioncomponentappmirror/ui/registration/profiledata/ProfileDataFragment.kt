@@ -1,18 +1,20 @@
 package br.com.douglasmotta.naivagtioncomponentappmirror.ui.registration.profiledata
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import br.com.douglasmotta.naivagtioncomponentappmirror.R
+import br.com.douglasmotta.naivagtioncomponentappmirror.data.db.AppDataBase
+import br.com.douglasmotta.naivagtioncomponentappmirror.data.repository.UserDbDataSource
 import br.com.douglasmotta.naivagtioncomponentappmirror.extensions.dismissError
 import br.com.douglasmotta.naivagtioncomponentappmirror.extensions.navigateWithAnimations
 import br.com.douglasmotta.naivagtioncomponentappmirror.ui.registration.RegistrationViewModel
@@ -21,7 +23,14 @@ import kotlinx.android.synthetic.main.fragment_profile_data.*
 
 class ProfileDataFragment : Fragment() {
 
-    private val registrationViewModel: RegistrationViewModel by activityViewModels()
+    private val registrationViewModel: RegistrationViewModel by activityViewModels(
+        factoryProducer = {
+            val database = AppDataBase.getDatabase(requireContext())
+            RegistrationViewModel.RegistrationViewModelFactory(
+                userRepository = UserDbDataSource(database.userDao())
+            )
+        }
+    )
 
     private val navController: NavController by lazy {
         findNavController()
@@ -50,7 +59,7 @@ class ProfileDataFragment : Fragment() {
     )
 
     private fun listenToRegistrationStateEvent(validationFields: Map<String, TextInputLayout>) {
-        registrationViewModel.registrationStateEvent.observe(this, Observer { registrationState ->
+        registrationViewModel.registrationStateEvent.observe(viewLifecycleOwner, Observer { registrationState ->
             when (registrationState) {
                 is RegistrationViewModel.RegistrationState.CollectCredentials -> {
                     val name = inputProfileDataName.text.toString()
